@@ -1,16 +1,19 @@
-package main
+package utils
 
 import (
     "context"
     "fmt"
-
-    "kitex-multi-protocol/kitex_gen/user"
 )
 
-// UserServiceImpl implementa la interfaz UserService.
+// UserServiceImpl implements the UserService interface.
 type UserServiceImpl struct{}
 
-// GetUser implementa el método GetUser de la interfaz UserService.
+// GetUser implements the GetUser method of the UserService interface.
 func (s *UserServiceImpl) GetUser(ctx context.Context, userID int64) (string, error) {
-    return fmt.Sprintf("Usuario con ID %d", userID), nil
+    return fmt.Sprintf("User with ID %d", userID), nil
+}
+
+// NewUserServiceImpl creates a new instance of UserServiceImpl.
+func NewUserServiceImpl() *UserServiceImpl {
+    return &UserServiceImpl{}
 }

@@ -6,27 +6,27 @@ import (
     "net"
     "net/http"
 
-	"kitex-multi-protocol/utils"
+    "kitex-multi-protocol/utils" // Importamos el paquete utils
 )
 
 func main() {
-    // Crear una instancia del servicio
-    service := new(UserServiceImpl)
+    // Create an instance of the service
+    service := utils.NewUserServiceImpl()
 
-    // Crear un manejador
-    handler := NewHandler(service)
+    // Create a handler
+    handler := utils.NewHandler(service)
 
-    // Configurar el servidor
+    // Configure the server
     listener, err := net.Listen("tcp", ":8888")
     if err != nil {
-        log.Fatalf("Error al iniciar el servidor: %v", err)
+        log.Fatalf("Failed to start server: %v", err)
     }
     defer listener.Close()
 
     for {
         conn, err := listener.Accept()
         if err != nil {
-            log.Printf("Error al aceptar conexión: %v", err)
+            log.Printf("Error accepting connection: %v", err)
             continue
         }
 
@@ -34,19 +34,19 @@ func main() {
     }
 }
 
-func handleConnection(conn net.Conn, handler *Handler) {
-    protocolType, err := DetectProtocol(conn)
+func handleConnection(conn net.Conn, handler *utils.Handler) {
+    protocolType, err := utils.DetectProtocol(conn)
     if err != nil {
-        log.Printf("Error al detectar protocolo: %v", err)
+        log.Printf("Error detecting protocol: %v", err)
         conn.Close()
         return
     }
 
     if protocolType == "HTTP" {
-        log.Println("Solicitud HTTP detectada")
+        log.Println("HTTP request detected")
         request, err := http.ReadRequest(bufio.NewReader(conn))
         if err != nil {
-            log.Printf("Error al leer solicitud HTTP: %v", err)
+            log.Printf("Error reading HTTP request: %v", err)
             conn.Close()
             return
         }
@@ -63,12 +63,12 @@ func handleConnection(conn net.Conn, handler *Handler) {
 
         handler.HandleHTTPRequest(&responseWriter{Conn: conn}, request)
 
-        // Escribir la respuesta HTTP en la conexión
+        // Write the HTTP response to the connection
         response.Write(conn)
         conn.Close()
     } else if protocolType == "Thrift" {
-        log.Println("Solicitud Thrift detectada")
-        // Aquí manejarías la solicitud Thrift usando handler.HandleThriftRequest
+        log.Println("Thrift request detected")
+        // Here you would handle Thrift requests using handler.HandleThriftRequest
     }
 }
 
@@ -77,7 +77,6 @@ type responseWriter struct {
     header http.Header
 }
 
-// Header devuelve las cabeceras de la respuesta.
 func (w *responseWriter) Header() http.Header {
     if w.header == nil {
         w.header = make(http.Header)
@@ -85,12 +84,10 @@ func (w *responseWriter) Header() http.Header {
     return w.header
 }
 
-// Write escribe los datos en la conexión.
 func (w *responseWriter) Write(data []byte) (int, error) {
     return w.Conn.Write(data)
 }
 
-// WriteHeader escribe el código de estado HTTP.
 func (w *responseWriter) WriteHeader(statusCode int) {
-    // No necesitamos hacer nada aquí porque estamos escribiendo directamente en la conexión.
+    // No need to do anything here since we are writing directly to the connection.
 }
