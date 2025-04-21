@@ -2,6 +2,8 @@ module kitex-multi-protocol
 
 go 1.24.2
 
+replace github.com/apache/thrift => github.com/apache/thrift v0.13.0
+
 require (
 	github.com/cloudwego/gopkg v0.1.4
 	github.com/cloudwego/kitex v0.13.1
@@ -46,5 +48,3 @@ require (
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/apache/thrift => github.com/apache/thrift v0.13.0
