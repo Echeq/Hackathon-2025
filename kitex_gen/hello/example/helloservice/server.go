@@ -3,7 +3,7 @@ package helloservice
 
 import (
 	server "github.com/cloudwego/kitex/server"
-	example "kitex-multi-protocol/kitex-multi-protocol/kitex_gen/hello/example"
+	example "kitex-multi-protocol/kitex_gen/hello/example"
 )
 
 // NewServer creates a server.Server with the given handler and options.
