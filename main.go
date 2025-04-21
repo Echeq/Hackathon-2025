@@ -2,17 +2,24 @@ package main
 
 import (
     "log"
+    "net"
 
     "github.com/cloudwego/kitex/server"
-    "kitex-multi-protocol/kitex_gen/UserService/userservice"
-    "kitex-multi-protocol/multiprotocol"
+    "kitex-multi-protocol/kitex_gen/example/exampleservice"
+    "kitex-multi-protocol/biz/service"
 )
 
 func main() {
-    // Define el servicio
-    svr := userservice.NewServer(
-        new(UserServiceImpl),
-        server.WithTransHandlerFactory(multiprotocol.MultiProtocolTransHandlerFactory{}),
+    // Configura la dirección del servidor
+    addr, err := net.ResolveTCPAddr("tcp", ":8888")
+    if err != nil {
+        log.Fatalf("Failed to resolve address: %v", err)
+    }
+
+    // Crea el servidor
+    svr := exampleservice.NewServer(
+        new(service.ExampleServiceImpl),
+        server.WithServiceAddr(addr),
     )
 
     // Inicia el servidor

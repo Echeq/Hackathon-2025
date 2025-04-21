@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	user "kitex-multi-protocol/kitex_gen/user"
+	example "kitex-multi-protocol/kitex_gen/hello/example"
 )
 
-// UserServiceImpl implements the last service interface defined in the IDL.
-type UserServiceImpl struct{}
+// HelloServiceImpl implements the last service interface defined in the IDL.
+type HelloServiceImpl struct{}
 
-// GetUser implements the UserServiceImpl interface.
-func (s *UserServiceImpl) GetUser(ctx context.Context, iD string) (resp *user.User, err error) {
+// HelloMethod implements the HelloServiceImpl interface.
+func (s *HelloServiceImpl) HelloMethod(ctx context.Context, request *example.HelloReq) (resp *example.HelloResp, err error) {
 	// TODO: Your code here...
 	return
 }

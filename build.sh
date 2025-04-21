@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-RUN_NAME="UserService"
+RUN_NAME="hello"
 
 mkdir -p output/bin
 cp script/* output/
