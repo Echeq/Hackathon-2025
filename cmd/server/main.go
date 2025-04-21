@@ -1,93 +1,78 @@
 package main
 
 import (
-    "bufio"
-    "log"
-    "net"
-    "net/http"
+	"context"
+	"log"
+	"net"
 
-    "kitex-multi-protocol/utils" // Importamos el paquete utils
+	"kitex-multi-protocol/internal/protocol"
+	"kitex-multi-protocol/kitex_gen/user"
+	"kitex-multi-protocol/utils"
 )
 
 func main() {
-    // Create an instance of the service
-    service := utils.NewUserServiceImpl()
+	// Crear una instancia del servicio
+	service := utils.NewUserServiceImpl()
 
-    // Create a handler
-    handler := utils.NewHandler(service)
+	// Crear una fábrica de manejadores
+	transHandlerFactory := protocol.NewTransHandlerFactory()
 
-    // Configure the server
-    listener, err := net.Listen("tcp", ":8888")
-    if err != nil {
-        log.Fatalf("Failed to start server: %v", err)
-    }
-    defer listener.Close()
+	// Configurar el servidor
+	listener, err := net.Listen("tcp", ":8888")
+	if err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
+	defer listener.Close()
 
-    for {
-        conn, err := listener.Accept()
-        if err != nil {
-            log.Printf("Error accepting connection: %v", err)
-            continue
-        }
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			log.Printf("Error accepting connection: %v", err)
+			continue
+		}
 
-        go handleConnection(conn, handler)
-    }
+		go handleConnection(conn, transHandlerFactory, service)
+	}
 }
 
-func handleConnection(conn net.Conn, handler *utils.Handler) {
-    protocolType, err := utils.DetectProtocol(conn)
-    if err != nil {
-        log.Printf("Error detecting protocol: %v", err)
-        conn.Close()
-        return
-    }
+func handleConnection(conn net.Conn, factory *protocol.TransHandlerFactory, service user.UserService) {
+	defer conn.Close()
 
-    if protocolType == "HTTP" {
-        log.Println("HTTP request detected")
-        request, err := http.ReadRequest(bufio.NewReader(conn))
-        if err != nil {
-            log.Printf("Error reading HTTP request: %v", err)
-            conn.Close()
-            return
-        }
+	// Detectar el protocolo usando TransHandlerFactory
+	pre := make([]byte, 4)
+	n, err := conn.Read(pre)
+	if err != nil {
+		log.Printf("Error detecting protocol: %v", err)
+		return
+	}
+	if n < 4 {
+		log.Printf("Error detecting protocol: not enough data to detect protocol")
+		return
+	}
 
-        response := http.Response{
-            Status:        "200 OK",
-            StatusCode:    200,
-            Proto:         "HTTP/1.1",
-            ProtoMajor:    1,
-            ProtoMinor:    1,
-            Body:          nil,
-            ContentLength: 0,
-        }
+	protocolType, err := factory.ProtocolMatchFromPreRead(pre)
+	if err != nil {
+		log.Printf("Error detecting protocol: %v", err)
+		return
+	}
 
-        handler.HandleHTTPRequest(&responseWriter{Conn: conn}, request)
+	// Restaurar los bytes leídos durante la detección del protocolo
+	bufferedConn := protocol.NewBufferedConn(conn)
+	bufferedConn.Buffer = pre
+	if n > 0 {
+		bufferedConn.Buffer = bufferedConn.Buffer[:n]
+	}
 
-        // Write the HTTP response to the connection
-        response.Write(conn)
-        conn.Close()
-    } else if protocolType == "Thrift" {
-        log.Println("Thrift request detected")
-        // Here you would handle Thrift requests using handler.HandleThriftRequest
-    }
-}
+	// Crear el handler adecuado
+	handler := protocol.CreateHandler(protocolType, service)
+	if handler == nil {
+		log.Printf("No handler found for protocol: %s", protocolType)
+		return
+	}
 
-type responseWriter struct {
-    net.Conn
-    header http.Header
-}
-
-func (w *responseWriter) Header() http.Header {
-    if w.header == nil {
-        w.header = make(http.Header)
-    }
-    return w.header
-}
-
-func (w *responseWriter) Write(data []byte) (int, error) {
-    return w.Conn.Write(data)
-}
-
-func (w *responseWriter) WriteHeader(statusCode int) {
-    // No need to do anything here since we are writing directly to the connection.
+	// Manejar la solicitud usando la conexión envuelta
+	ctx := context.Background()
+	if err := handler.Handle(ctx, bufferedConn); err != nil {
+		log.Printf("Error handling request: %v", err)
+	}
 }
