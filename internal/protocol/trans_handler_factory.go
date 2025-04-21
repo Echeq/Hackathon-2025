@@ -1,24 +1,15 @@
 package protocol
 
-import (
-	"regexp"
-)
+import "kitex-multi-protocol/kitex_gen/user"
 
-// TransHandlerFactory encapsulates the logic to detect protocols and create handlers.
-type TransHandlerFactory struct{}
-
-// NewTransHandlerFactory creates a new instance of TransHandlerFactory.
-func NewTransHandlerFactory() *TransHandlerFactory {
-	return &TransHandlerFactory{}
-}
-
-// ProtocolMatchFromPreRead detects whether a request is HTTP/1.1 or Thrift from pre-read data.
-func (f *TransHandlerFactory) ProtocolMatchFromPreRead(pre []byte) (string, error) {
-	httpReg := regexp.MustCompile(`^(?:GET|POST|PUT|DELETE|HEAD|OPTIONS|CONNECT|TRACE|PATCH)`)
-
-	// Convertir pre a una cadena para usar con Match
-	if httpReg.MatchString(string(pre)) {
-		return "HTTP", nil
+// CreateHandler crea un manejador basado en el protocolo detectado
+func CreateHandler(protocol string, service user.UserService) Handler {
+	switch protocol {
+	case "HTTP":
+		return &HTTPHandler{Service: service}
+	case "Thrift":
+		return &ThriftHandler{Service: service}
+	default:
+		return nil
 	}
-	return "Thrift", nil
 }

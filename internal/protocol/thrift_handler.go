@@ -2,26 +2,18 @@ package protocol
 
 import (
 	"context"
-	"fmt"
+	"log"
+	"net"
 
 	"kitex-multi-protocol/kitex_gen/user"
 )
 
-// ThriftHandlerImpl implements the ThriftHandler interface.
-type ThriftHandlerImpl struct {
+// ThriftHandler maneja solicitudes Thrift
+type ThriftHandler struct {
 	Service user.UserService
 }
 
-// HandleThriftRequest processes incoming Thrift requests.
-func (h *ThriftHandlerImpl) HandleThriftRequest(ctx context.Context, methodName string, args interface{}) (interface{}, error) {
-	switch methodName {
-	case "GetUser":
-		userID, ok := args.(int64)
-		if !ok {
-			return nil, fmt.Errorf("invalid argument for GetUser")
-		}
-		return h.Service.GetUser(ctx, userID)
-	default:
-		return nil, fmt.Errorf("method not found: %s", methodName)
-	}
+func (h *ThriftHandler) Handle(ctx context.Context, conn net.Conn) error {
+	log.Println("Handling Thrift request...")
+	return nil
 }

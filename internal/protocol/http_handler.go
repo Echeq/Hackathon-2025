@@ -2,49 +2,89 @@ package protocol
 
 import (
 	"context"
-	"encoding/json"
-	"io"
+	"log"
+	"net"
 	"net/http"
+	"time"
 
 	"kitex-multi-protocol/kitex_gen/user"
 )
 
-// HTTPHandlerImpl implements the HTTPHandler interface.
+// HTTPHandler maneja solicitudes HTTP
+type HTTPHandler struct {
+	Service user.UserService
+}
+
+func (h *HTTPHandler) Handle(ctx context.Context, conn net.Conn) error {
+	httpHandler := &HTTPHandlerImpl{Service: h.Service}
+	srv := &http.Server{
+		Handler: httpHandler,
+	}
+
+	tempListener := newSingleConnListener(conn)
+	defer tempListener.Close()
+
+	errChan := make(chan error, 1)
+	go func() {
+		errChan <- srv.Serve(tempListener)
+	}()
+
+	select {
+	case <-ctx.Done():
+		srv.Shutdown(context.Background())
+		return ctx.Err()
+	case err := <-errChan:
+		if err != nil && err != http.ErrServerClosed {
+			log.Printf("Error serving HTTP request: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		srv.Shutdown(context.Background())
+	}
+
+	return nil
+}
+
+// singleConnListener es una implementación de net.Listener que solo acepta una conexión
+type singleConnListener struct {
+	conn net.Conn
+}
+
+func newSingleConnListener(conn net.Conn) *singleConnListener {
+	return &singleConnListener{conn: conn}
+}
+
+func (l *singleConnListener) Accept() (net.Conn, error) {
+	if l.conn == nil {
+		return nil, net.ErrClosed
+	}
+	conn := l.conn
+	l.conn = nil
+	return conn, nil
+}
+
+func (l *singleConnListener) Close() error {
+	if l.conn != nil {
+		err := l.conn.Close()
+		l.conn = nil
+		return err
+	}
+	return nil
+}
+
+func (l *singleConnListener) Addr() net.Addr {
+	if l.conn != nil {
+		return l.conn.LocalAddr()
+	}
+	return nil
+}
+
+// HTTPHandlerImpl es la implementación real para manejar solicitudes HTTP
 type HTTPHandlerImpl struct {
 	Service user.UserService
 }
 
-// ServeHTTP processes incoming HTTP requests.
 func (h *HTTPHandlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path == "/api/UserService/GetUser" && r.Method == "POST" {
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Error reading request body", http.StatusBadRequest)
-			return
-		}
-
-		var params map[string]interface{}
-		err = json.Unmarshal(body, &params)
-		if err != nil {
-			http.Error(w, "Error parsing JSON", http.StatusBadRequest)
-			return
-		}
-
-		userID, ok := params["userID"].(float64)
-		if !ok {
-			http.Error(w, "Invalid userID", http.StatusBadRequest)
-			return
-		}
-
-		result, err := h.Service.GetUser(context.Background(), int64(userID))
-		if err != nil {
-			http.Error(w, "Error processing request", http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"result": result})
-	} else {
-		http.Error(w, "Route not found", http.StatusNotFound)
-	}
+	// Aquí debes implementar la lógica para manejar la solicitud HTTP
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("HTTP request handled"))
 }
