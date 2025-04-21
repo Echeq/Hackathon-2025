@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	example "kitex-multi-protocol/kitex_gen/hello/example"
+	example "kitex-multi-protocol/kitex-multi-protocol/kitex_gen/hello/example"
 )
 
 // HelloServiceImpl implements the last service interface defined in the IDL.
