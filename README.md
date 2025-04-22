@@ -1,3 +1,12 @@
+<h1>HACKHATON 2025 BY BYTEDANCE (Third place winner)</h1>
+<h2>Protocol Challenges in Cloud-Native Architecture</h2>
+
+<h2>work partners</h2>
+<p>
+  <ul>Armando Qiu https://github.com/armandoqiu511</ul>
+  <ul>Elbert A. Zhou https://github.com/MemerZxZ</ul>
+</p>
+
 <h2>Environment Preparation </h2>
 1. go install github.com/cloudwego/thriftgo@latest
 2. go install github.com/cloudwego/kitex/tool/cmd/kitex@latest
