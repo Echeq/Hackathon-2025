@@ -1,4 +1,4 @@
-<h1>HACKHATON 2025 BY BYTEDANCE (Third place winner)</h1>
+<h1>HACKHATON 2025 BY CloudWeGo (Third place winner)</h1>
 <h2>Protocol Challenges in Cloud-Native Architecture</h2>
 
 <h2>work partners</h2>
